@@ -20,20 +20,20 @@ class App(tk.Tk):
 
         self.title("QR-Code Scanner")
         # self.attributes('-topmost', 1)         # optionally keep window always in foreground
-        # self.attributes('-fullscreen', True)   # optionally set window to fullscreen
+        self.attributes('-fullscreen', True)   # optionally set window to fullscreen
 
         self.iconbitmap("icon.ico")
 
         self.window_width = 1280  # define window size
         self.window_height = 800
 
-        screen_width = self.winfo_screenwidth()  # determine screen size
-        screen_height = self.winfo_screenheight()
+        self.screen_width = self.winfo_screenwidth()  # determine screen size
+        self.screen_height = self.winfo_screenheight()
 
         center_x = int(
-            screen_width / 2 - self.window_width / 2
+            self.screen_width / 2 - self.window_width / 2
         )  # determine the center of the screen
-        center_y = int(screen_height / 2 - self.window_height / 2)
+        center_y = int(self.screen_height / 2 - self.window_height / 2)
 
         self.geometry(
             f"{self.window_width}x{self.window_height}+{center_x}+{center_y}"
@@ -74,7 +74,7 @@ class App(tk.Tk):
 
                 # Calculate the aspect ratio of the image
                 aspect_ratio = img.height / img.width
-                new_width = self.window_width // 4
+                new_width = int(self.screen_width / 2)
 
                 # Calculate the new dimensions
                 finalHeight = int(new_width * aspect_ratio)
@@ -94,7 +94,9 @@ class App(tk.Tk):
                     self.OnQRCodeDetected(value)
                     lastRegisteredPerson = value
                     self.lastRegisteredPerson.config(
-                        text="Last registered participant:\n" + lastRegisteredPerson
+                        text="Last registered participant:\n" + lastRegisteredPerson,
+                        foreground="green",
+                        justify="center"
                     )
 
             else:
@@ -102,12 +104,12 @@ class App(tk.Tk):
 
     def create_window(self):
         standardFont = font.nametofont("TkDefaultFont")
-        self.titleFont = (standardFont, self.window_width // 30)
-        self.regularFont = (standardFont, self.window_width // 40)
+        self.titleFont = (standardFont, self.screen_width // 35)
+        self.regularFont = (standardFont, self.screen_width // 45)
 
         self.programName = ttk.Label(
             self,
-            text="Conference Enrollment",
+            text="MST - Attendees Tracker",
             foreground=("black"),
             font=self.titleFont,
             justify=("center"),
@@ -122,10 +124,10 @@ class App(tk.Tk):
         )  # text for upload status
         self.imageLabel = tk.Label(self)  # place for the camera image
         self.imageLabel.config(
-            width=self.window_width // 2, height=self.window_height // 2
+            width=self.screen_width // 2, height=self.screen_height // 2
         )
         self.time = ttk.Label(self, text="", font=self.regularFont)  # current time
-        self.lastRegisteredPerson = ttk.Label(self, text="", font=self.regularFont)
+        self.lastRegisteredPerson = ttk.Label(self, text="", font=self.regularFont, justify="center")
         self.selected_entry = tk.StringVar()
         self.selector = ttk.Combobox(
             self,
@@ -151,17 +153,26 @@ class App(tk.Tk):
         self.sub_selector.current(0)  # Make the first entry the default one
         self.sub_selector.config(width=self.window_width // 40)
 
+        padx = self.window_width // 50
+        pady = self.window_height // 20
+
         # place all GUI elements on the grid layout
-        self.programName.grid(column=0, row=0, columnspan=3, padx=15, pady=15)
+        self.programName.grid(column=0, row=0, columnspan=3, padx=padx, pady=pady)
         self.name.grid(column=2, row=2)
-        self.indicator.grid(column=1, row=3, padx=15, pady=15)
+        self.indicator.grid(column=1, row=3, padx=padx, pady=pady)
         self.info.grid(column=2, row=3)
         self.cloudInfo.grid(column=2, row=4)
-        self.imageLabel.grid(column=0, row=1, rowspan=4, padx=15, pady=15)
-        self.time.grid(column=0, row=5, padx=15, pady=15)
-        self.lastRegisteredPerson.grid(column=0, row=6, padx=15, pady=15)
-        self.selector.grid(column=2, row=5, padx=30, pady=15)
-        self.sub_selector.grid(column=2, row=6, padx=30, pady=15)
+        self.imageLabel.grid(column=0, row=1, rowspan=4, padx=padx, pady=pady)
+        self.time.grid(column=0, row=5, padx=padx, pady=pady)
+        self.lastRegisteredPerson.grid(column=0, row=6, padx=padx, pady=pady)
+        self.selector.grid(column=2, row=5, padx=30, pady=pady)
+        self.sub_selector.grid(column=2, row=6, padx=30, pady=pady)
+
+        self.close_button = tk.Button(self, text="Close", command=self.close_window, fg="red")
+        self.close_button.grid(row=0, column=3, padx=padx, pady=pady)
+    
+    def close_window(self):
+        self.destroy()
 
     def on_combobox_select(self, event):
         # Get the selected option
