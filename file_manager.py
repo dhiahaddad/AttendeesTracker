@@ -138,7 +138,6 @@ class FileManager:
         return sessions
         
     def downloadRemoteFile(self, saveFile: str):
-        self.oc = owncloud.Client.from_public_link('https://tuc.cloud/index.php/s/nisTB2KdNHHzgGy', folder_password = "dfg1325FDsg221")  # connect to the cloud
         self.oc.get_file(saveFile, saveFile) # download remote file
         print("downloaded")
     
