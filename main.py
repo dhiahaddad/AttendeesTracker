@@ -6,36 +6,43 @@ from PIL import Image, ImageTk
 import time
 import datetime
 from threading import Thread
-from file_manager import FileManager
+from file_manager import FileManager, Session, Sessions
 from camera_feed import CameraFeed
+from typing import List
 
 
 class App(tk.Tk):
     name: ttk.Label
+    sessions: Sessions
+    auto_session_selection: bool
+    switch_state: bool = False
+
     def __init__(self):
         super().__init__()
 
         self.input_file_path = "Sessions.xlsx"
         self.output_file_path = "Main file.xlsx"
         self.fileManager = FileManager(self.input_file_path, self.output_file_path)
+        self.sessions = Sessions
+        self.auto_session_selection = True
 
         self.title("QR-Code Scanner")
         # self.attributes('-topmost', 1)         # optionally keep window always in foreground
-        self.attributes('-fullscreen', True)   # optionally set window to fullscreen
+        self.attributes("-fullscreen", True)  # optionally set window to fullscreen
 
-        #self.iconbitmap("icon.ico")
+        # self.iconbitmap("icon.ico")
 
         self.screen_width = self.winfo_screenwidth()  # determine screen size
         self.screen_height = self.winfo_screenheight()
 
         center_x = int(
-            self.screen_width / 2 - self.screen_width  / 2
+            self.screen_width / 2 - self.screen_width / 2
         )  # determine the center of the screen
-        center_y = int(self.screen_height / 2 - self.screen_height  / 2)
+        center_y = int(self.screen_height / 2 - self.screen_height / 2)
 
-        #self.geometry(
+        # self.geometry(
         #    f"{self.screen_width }x{self.screen_height }+{center_x}+{center_y}"
-        #)  # center the window on the screen
+        # )  # center the window on the screen
 
         self.columnconfigure(0, weight=5)  # set the size ratio of the different columns
         self.columnconfigure(1, weight=1)
@@ -65,7 +72,10 @@ class App(tk.Tk):
             ) = self.cameraFeed.get_image()  # start the camera thread
             currentTime = datetime.datetime.now()
             if camera_is_found:
-                value, points = self.QR_read(image)
+                try:
+                    value, points = self.QR_read(image)
+                except Exception as ex:
+                    print(ex)
 
                 img = cv.cvtColor(image, cv.COLOR_BGR2RGB)
                 img = Image.fromarray(img)
@@ -94,7 +104,7 @@ class App(tk.Tk):
                     self.lastRegisteredPerson.config(
                         text="Last registered participant:\n" + lastRegisteredPerson,
                         foreground="green",
-                        justify="center"
+                        justify="center",
                     )
 
             else:
@@ -102,8 +112,8 @@ class App(tk.Tk):
 
     def create_window(self):
         standardFont = font.nametofont("TkDefaultFont")
-        self.titleFont = (standardFont, self.screen_width // 35)
-        self.regularFont = (standardFont, self.screen_width // 45)
+        self.titleFont = (standardFont, self.screen_width // 40)
+        self.regularFont = (standardFont, self.screen_width // 55)
 
         self.programName = ttk.Label(
             self,
@@ -125,7 +135,9 @@ class App(tk.Tk):
             width=self.screen_width // 2, height=self.screen_height // 2
         )
         self.time = ttk.Label(self, text="", font=self.regularFont)  # current time
-        self.lastRegisteredPerson = ttk.Label(self, text="", font=self.regularFont, justify="center")
+        self.lastRegisteredPerson = ttk.Label(
+            self, text="", font=self.regularFont, justify="center"
+        )
         self.selected_day = tk.StringVar()
         self.day_selector = ttk.Combobox(
             self,
@@ -139,7 +151,7 @@ class App(tk.Tk):
         print(self.day_selector["values"])
         self.day_selector.current(0)  # make the first entry the default one
         self.day_selector.bind("<<ComboboxSelected>>", self.on_day_selector_select)
-        self.day_selector.config(width=self.screen_width  // 70)
+        self.day_selector.config(width=self.screen_width // 70)
         self.selected_session = tk.StringVar()
         self.session_selector = ttk.Combobox(
             self,
@@ -147,13 +159,17 @@ class App(tk.Tk):
             state="readonly",
             font=self.regularFont,
         )
-        self.session_selector["values"] = self.fileManager.get_sessions(self.day_selector.get())
+        self.sessions = self.fileManager.get_Sessions(self.day_selector.get())
+        session_names: List[str] = self.sessions.get_session_names()
+        self.session_selector["values"] = session_names
         self.session_selector.current(0)  # Make the first entry the default one
-        self.session_selector.config(width=self.screen_width  // 70)
-        self.session_selector.bind("<<ComboboxSelected>>", self.on_session_selector_select)
+        self.session_selector.config(width=self.screen_width // 70)
+        self.session_selector.bind(
+            "<<ComboboxSelected>>", self.on_session_selector_select
+        )
 
-        padx = self.screen_width  // 60
-        pady = self.screen_height  // 40
+        padx = self.screen_width // 60
+        pady = self.screen_height // 50
 
         # place all GUI elements on the grid layout
         self.programName.grid(column=0, row=0, columnspan=3, padx=padx, pady=pady)
@@ -167,9 +183,32 @@ class App(tk.Tk):
         self.day_selector.grid(column=2, row=5, padx=30, pady=pady)
         self.session_selector.grid(column=2, row=6, padx=30, pady=pady)
 
-        self.close_button = tk.Button(self, text="Close", command=self.close_window, fg="red")
+        self.close_button = tk.Button(
+            self, text="Close", command=self.close_window, fg="red"
+        )
         self.close_button.grid(row=0, column=3, padx=padx, pady=pady)
-    
+
+        self.auto_session_var = False
+        self.auto_session_selection_button = tk.Button(
+            self, text="OFF", width=self.screen_width//200, height=self.screen_height//200, command=self.toggle_switch
+        )
+        self.auto_session_selection_button.grid(row=7, column=3, padx=padx, pady=pady)
+
+        self.auto_session_label = ttk.Label(
+            self, text="Autotmatically select session -->", font=self.regularFont
+        )  # current time
+        self.auto_session_label.grid(row=7, column=2, padx=padx, pady=pady)
+
+    def toggle_switch(self):
+        self.auto_session_var = not self.auto_session_var
+        self.update_auto_session_selection_button()
+
+    def update_auto_session_selection_button(self):
+        if self.auto_session_var:
+            self.auto_session_selection_button.config(text="ON", bg="green")
+        else:
+            self.auto_session_selection_button.config(text="OFF", bg="red")
+
     def close_window(self):
         self.destroy()
 
@@ -183,11 +222,13 @@ class App(tk.Tk):
         selected_day = self.day_selector.get()
         print("Selected Option:", selected_day)
 
-        new_options = self.fileManager.get_sessions(selected_day)
+        self.sessions = self.fileManager.get_Sessions(selected_day)
+        session_names: List[str] = self.sessions.get_session_names()
+        session, current_session_index = self.sessions.get_current_session()
 
-        self.session_selector["values"] = new_options
-        if new_options:
-            self.session_selector.current(0)
+        self.session_selector["values"] = session_names
+        if session_names:
+            self.session_selector.current(current_session_index)
         else:
             self.session_selector.set("")  # Clear the selection if there are no values
 
@@ -200,22 +241,34 @@ class App(tk.Tk):
             statusImage = "enrolment_successful.png"
         self.info.config(text=message)
         newImg = ImageTk.PhotoImage(
-            (Image.open(statusImage)).resize((self.screen_height // 10, self.screen_height // 10), Image.Resampling.LANCZOS)
+            (Image.open(statusImage)).resize(
+                (self.screen_height // 10, self.screen_height // 10),
+                Image.Resampling.LANCZOS,
+            )
         )
         self.indicator.config(image=newImg)
         self.indicator.image = newImg
 
     def tellNoCameraFound(self):
-        self.name.config(text="No Camera Found")  # display message and image if no camera found
+        self.name.config(
+            text="No Camera Found"
+        )  # display message and image if no camera found
         img = Image.open("no-video.png")
-        img = img.resize((300,300), Image.LANCZOS)
+        img = img.resize((300, 300), Image.LANCZOS)
         img = ImageTk.PhotoImage(img)
         self.imageLabel.config(image=img)
         self.imageLabel.image = img
 
     def OnQRCodeDetected(self, value):
         self.name.config(text="QR Code Found")
-        result = self.fileManager.appendQRData(value, str(self.selected_day.get()), str(self.selected_session.get()))
+        if (self.auto_session_var):
+            self.fileManager.downloadRemoteFile(self.input_file_path)
+            self.sessions = self.fileManager.get_Sessions(self.selected_day.get())
+            session, current_session_index = self.sessions.get_current_session()
+            self.session_selector.current(current_session_index)
+        result = self.fileManager.appendQRData(
+            value, str(self.selected_day.get()), str(self.selected_session.get())
+        )
         self.cloudInfo.config(text=result)
         self.statusMessage("success")
         time.sleep(1)

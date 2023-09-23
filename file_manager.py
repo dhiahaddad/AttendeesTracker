@@ -3,7 +3,42 @@ import pandas as pd
 import datetime
 import owncloud
 import os
-from typing import List
+from typing import List, Tuple
+
+class Session:
+    session_name: str
+    start_time: datetime.time
+    def __init__(self, session_name: str, start_time_str: datetime.time) -> None:
+        self.session_name = session_name
+        self.start_time = start_time_str
+
+class Sessions:
+    sessions: List[Session]
+    def __init__(self) -> None:
+        self.sessions = []
+
+    def add_session(self, session: Session):
+        self.sessions.append(session)
+    
+    def get_session_names(self) -> List[str]:
+        session_names: List[str] = []
+        for session in self.sessions:
+            session_names.append(session.session_name)
+        return session_names
+    
+    def get_current_session(self) -> Tuple[Session, int]:
+        current_datetime = datetime.datetime.now()
+        current_time = current_datetime.time()
+        for i in range(len(self.sessions)-1):
+            if (current_time >= self.sessions[i].start_time and current_time < self.sessions[i+1].start_time):
+                return self.sessions[i],i
+        i = len(self.sessions)-1
+        return self.sessions[i],i
+    
+    def get_session_by_name(self, session_name: str) -> Session:
+        for i in range(len(self.sessions)):
+            if self.sessions[i].session_name == session_name:
+                return self.sessions[i]
 
 class FileManager:
     workbook = openpyxl.Workbook()
@@ -79,19 +114,35 @@ class FileManager:
         except:
             return "Saved locally"
 
-
     def get_sessions(self, selected_sheet: str) -> List[str]:
         if selected_sheet:
             wb = openpyxl.load_workbook(self.input_file_path)
             sheet = wb[selected_sheet]
-            rows = sheet.iter_rows(values_only=True)
+            rows = sheet.iter_rows(min_row=2, values_only=True)
             row_values = [", ".join(map(str, row)) for row in rows]
             wb.close() 
             return row_values
+    
+    def get_Sessions(self, selected_sheet: str) -> Sessions:
+        sessions = Sessions()
+        if selected_sheet:
+            wb = openpyxl.load_workbook(self.input_file_path)
+            sheet = wb[selected_sheet]
+            rows = sheet.iter_rows(min_row=1, values_only=True)
+            for row in rows:
+                session_name = row[0]  # Assuming "session" is in the first column (column index 0)
+                start_time = row[1]  # Assuming "start_time" is in the second column (column index 1)
+                session = Session(session_name, start_time)
+                sessions.add_session(session)
+            wb.close()
+        return sessions
         
     def downloadRemoteFile(self, saveFile: str):
+        self.oc = owncloud.Client.from_public_link('https://tuc.cloud/index.php/s/nisTB2KdNHHzgGy', folder_password = "dfg1325FDsg221")  # connect to the cloud
         self.oc.get_file(saveFile, saveFile) # download remote file
+        print("downloaded")
     
     def upload_to_the_cloud(self, file_name):
         self.oc.drop_file(file_name)  # upload file to cloud
-        os.remove(file_name)     # delete local file when upload successful
+        print("uploaded")
+        # os.remove(file_name)     # delete local file when upload successful
