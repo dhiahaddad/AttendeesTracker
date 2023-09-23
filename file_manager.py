@@ -14,8 +14,10 @@ class FileManager:
         self.output_file_path = output_file_path
         self.oc = owncloud.Client.from_public_link('https://tuc.cloud/index.php/s/nisTB2KdNHHzgGy', folder_password = "dfg1325FDsg221")  # connect to the cloud
 
-    def append_row_to_excel(self, value, sheet_name):
-        timestamp = str(datetime.datetime.now())
+    def append_row_to_excel(self, value, sheet_name, session):
+        current_datetime = datetime.datetime.now()
+        date = current_datetime.date()
+        time = current_datetime.time()
         try:
             # Load the existing Excel workbook if it exists
             workbook = openpyxl.load_workbook(self.output_file_path)
@@ -34,7 +36,7 @@ class FileManager:
         insert_index = sheet.max_row + 1
 
         # Create a DataFrame with the new row data
-        data = {'Value': value, 'Timestamp': timestamp}
+        data = {'Date': date, 'Time': time, 'Attendee': value, 'Session': session}
         df_row = pd.DataFrame([data])
 
         # Convert the DataFrame row to a list
@@ -60,14 +62,14 @@ class FileManager:
             wb.close()
             return sheet_names
         
-    def appendQRData(self, value, sheetName):
+    def appendQRData(self, value, sheetName, session):
         try:
             self.downloadRemoteFile(self.output_file_path)
         except:
             return "Error Downloading File"
         
         try:
-            self.append_row_to_excel(value, sheetName)
+            self.append_row_to_excel(value, sheetName, session)
         except:
             return "Error appending to File"
         

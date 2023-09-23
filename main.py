@@ -139,7 +139,7 @@ class App(tk.Tk):
         print(self.day_selector["values"])
         self.day_selector.current(0)  # make the first entry the default one
         self.day_selector.bind("<<ComboboxSelected>>", self.on_day_selector_select)
-        self.day_selector.config(width=self.screen_width  // 40)
+        self.day_selector.config(width=self.screen_width  // 70)
         self.selected_session = tk.StringVar()
         self.session_selector = ttk.Combobox(
             self,
@@ -149,7 +149,7 @@ class App(tk.Tk):
         )
         self.session_selector["values"] = self.fileManager.get_sessions(self.day_selector.get())
         self.session_selector.current(0)  # Make the first entry the default one
-        self.session_selector.config(width=self.screen_width  // 40)
+        self.session_selector.config(width=self.screen_width  // 70)
         self.session_selector.bind("<<ComboboxSelected>>", self.on_session_selector_select)
 
         padx = self.screen_width  // 60
@@ -215,7 +215,7 @@ class App(tk.Tk):
 
     def OnQRCodeDetected(self, value):
         self.name.config(text="QR Code Found")
-        result = self.fileManager.appendQRData(value, str(self.selected_day.get()))
+        result = self.fileManager.appendQRData(value, str(self.selected_day.get()), str(self.selected_session.get()))
         self.cloudInfo.config(text=result)
         self.statusMessage("success")
         time.sleep(1)
