@@ -3,6 +3,7 @@ import pandas as pd
 import datetime
 import owncloud
 import os
+from typing import List
 
 class FileManager:
     workbook = openpyxl.Workbook()
@@ -52,7 +53,7 @@ class FileManager:
         # Close the workbook
         workbook.close()
 
-    def get_sheet_names(self) -> list[str]:
+    def get_sheet_names(self) -> List[str]:
         if self.input_file_path:
             wb = openpyxl.load_workbook(self.input_file_path)
             sheet_names = wb.sheetnames
@@ -77,7 +78,7 @@ class FileManager:
             return "Saved locally"
 
 
-    def get_sessions(self, selected_sheet: str) -> list[str]:
+    def get_sessions(self, selected_sheet: str) -> List[str]:
         if selected_sheet:
             wb = openpyxl.load_workbook(self.input_file_path)
             sheet = wb[selected_sheet]

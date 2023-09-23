@@ -23,22 +23,19 @@ class App(tk.Tk):
         # self.attributes('-topmost', 1)         # optionally keep window always in foreground
         self.attributes('-fullscreen', True)   # optionally set window to fullscreen
 
-        self.iconbitmap("icon.ico")
-
-        self.window_width = 1280  # define window size
-        self.window_height = 800
+        #self.iconbitmap("icon.ico")
 
         self.screen_width = self.winfo_screenwidth()  # determine screen size
         self.screen_height = self.winfo_screenheight()
 
         center_x = int(
-            self.screen_width / 2 - self.window_width / 2
+            self.screen_width / 2 - self.screen_width  / 2
         )  # determine the center of the screen
-        center_y = int(self.screen_height / 2 - self.window_height / 2)
+        center_y = int(self.screen_height / 2 - self.screen_height  / 2)
 
-        self.geometry(
-            f"{self.window_width}x{self.window_height}+{center_x}+{center_y}"
-        )  # center the window on the screen
+        #self.geometry(
+        #    f"{self.screen_width }x{self.screen_height }+{center_x}+{center_y}"
+        #)  # center the window on the screen
 
         self.columnconfigure(0, weight=5)  # set the size ratio of the different columns
         self.columnconfigure(1, weight=1)
@@ -60,7 +57,7 @@ class App(tk.Tk):
         self.cameraThread.start()
 
     def main(self):
-        lastRegisteredPerson: str = ""
+        lastRegisteredPerson = ""
         while True:
             (
                 camera_is_found,
@@ -142,7 +139,7 @@ class App(tk.Tk):
         print(self.selector["values"])
         self.selector.current(0)  # make the first entry the default one
         self.selector.bind("<<ComboboxSelected>>", self.on_combobox_select)
-        self.selector.config(width=self.window_width // 40)
+        self.selector.config(width=self.screen_width  // 40)
         self.sub_session_var = tk.StringVar()
         self.sub_selector = ttk.Combobox(
             self,
@@ -152,10 +149,10 @@ class App(tk.Tk):
         )
         self.sub_selector["values"] = self.fileManager.get_sessions(self.selector.get())
         self.sub_selector.current(0)  # Make the first entry the default one
-        self.sub_selector.config(width=self.window_width // 40)
+        self.sub_selector.config(width=self.screen_width  // 40)
 
-        padx = self.window_width // 50
-        pady = self.window_height // 20
+        padx = self.screen_width  // 60
+        pady = self.screen_height  // 40
 
         # place all GUI elements on the grid layout
         self.programName.grid(column=0, row=0, columnspan=3, padx=padx, pady=pady)
