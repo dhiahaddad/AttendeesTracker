@@ -11,6 +11,7 @@ from camera_feed import CameraFeed
 
 
 class App(tk.Tk):
+    name: ttk.Label
     def __init__(self):
         super().__init__()
 
@@ -43,15 +44,15 @@ class App(tk.Tk):
         self.columnconfigure(1, weight=1)
         self.columnconfigure(2, weight=5)
         self.bind("<Configure>", self.resize_elements)
-
-        self.cameraFeed = CameraFeed()
         self.fileManager.downloadRemoteFile(self.input_file_path)
         # self.create_window()        # create the GUI window
-        self.guiThread = Thread(target=self.create_window)
-        self.guiThread.daemon = (
-            True  # necessary to stop the thread when exiting the program
-        )
-        self.guiThread.start()
+        # self.guiThread = Thread(target=self.create_window)
+        self.create_window()
+        # self.guiThread.daemon = (
+        #     True  # necessary to stop the thread when exiting the program
+        # )
+        # self.guiThread.start()
+        self.cameraFeed = CameraFeed()
         self.cameraThread = Thread(target=self.main)
         self.cameraThread.daemon = (
             True  # necessary to stop the thread when exiting the program
@@ -196,17 +197,15 @@ class App(tk.Tk):
             statusImage = "enrolment_successful.png"
         self.info.config(text=message)
         newImg = ImageTk.PhotoImage(
-            (Image.open(statusImage)).resize((32, 32), Image.Resampling.LANCZOS)
+            (Image.open(statusImage)).resize((self.screen_height // 10, self.screen_height // 10), Image.Resampling.LANCZOS)
         )
         self.indicator.config(image=newImg)
         self.indicator.image = newImg
 
     def tellNoCameraFound(self):
-        self.name.config(
-            text="No Camera Found"
-        )  # display message and image if no camera found
+        self.name.config(text="No Camera Found")  # display message and image if no camera found
         img = Image.open("no-video.png")
-        # img = img.resize((300,300), Image.LANCZOS)
+        img = img.resize((300,300), Image.LANCZOS)
         img = ImageTk.PhotoImage(img)
         self.imageLabel.config(image=img)
         self.imageLabel.image = img
@@ -216,7 +215,7 @@ class App(tk.Tk):
         result = self.fileManager.appendQRData(value, str(self.selected_entry.get()))
         self.cloudInfo.config(text=result)
         self.statusMessage("success")
-        time.sleep(1)
+        time.sleep(3)
 
     def tellNoQRC(self):
         self.name.config(text="No QR Code Found")
