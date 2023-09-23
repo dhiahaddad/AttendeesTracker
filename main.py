@@ -126,30 +126,31 @@ class App(tk.Tk):
         )
         self.time = ttk.Label(self, text="", font=self.regularFont)  # current time
         self.lastRegisteredPerson = ttk.Label(self, text="", font=self.regularFont, justify="center")
-        self.selected_entry = tk.StringVar()
-        self.selector = ttk.Combobox(
+        self.selected_day = tk.StringVar()
+        self.day_selector = ttk.Combobox(
             self,
-            textvariable=self.selected_entry,
+            textvariable=self.selected_day,
             state="readonly",
             font=self.regularFont,
         )  # session selector
-        self.selector[
+        self.day_selector[
             "values"
         ] = self.fileManager.get_sheet_names()  # custom sessions can be entered here
-        print(self.selector["values"])
-        self.selector.current(0)  # make the first entry the default one
-        self.selector.bind("<<ComboboxSelected>>", self.on_combobox_select)
-        self.selector.config(width=self.screen_width  // 40)
-        self.sub_session_var = tk.StringVar()
-        self.sub_selector = ttk.Combobox(
+        print(self.day_selector["values"])
+        self.day_selector.current(0)  # make the first entry the default one
+        self.day_selector.bind("<<ComboboxSelected>>", self.on_day_selector_select)
+        self.day_selector.config(width=self.screen_width  // 40)
+        self.selected_session = tk.StringVar()
+        self.session_selector = ttk.Combobox(
             self,
-            textvariable=self.sub_session_var,
+            textvariable=self.selected_session,
             state="readonly",
             font=self.regularFont,
         )
-        self.sub_selector["values"] = self.fileManager.get_sessions(self.selector.get())
-        self.sub_selector.current(0)  # Make the first entry the default one
-        self.sub_selector.config(width=self.screen_width  // 40)
+        self.session_selector["values"] = self.fileManager.get_sessions(self.day_selector.get())
+        self.session_selector.current(0)  # Make the first entry the default one
+        self.session_selector.config(width=self.screen_width  // 40)
+        self.session_selector.bind("<<ComboboxSelected>>", self.on_session_selector_select)
 
         padx = self.screen_width  // 60
         pady = self.screen_height  // 40
@@ -163,8 +164,8 @@ class App(tk.Tk):
         self.imageLabel.grid(column=0, row=1, rowspan=4, padx=padx, pady=pady)
         self.time.grid(column=0, row=5, padx=padx, pady=pady)
         self.lastRegisteredPerson.grid(column=0, row=6, padx=padx, pady=pady)
-        self.selector.grid(column=2, row=5, padx=30, pady=pady)
-        self.sub_selector.grid(column=2, row=6, padx=30, pady=pady)
+        self.day_selector.grid(column=2, row=5, padx=30, pady=pady)
+        self.session_selector.grid(column=2, row=6, padx=30, pady=pady)
 
         self.close_button = tk.Button(self, text="Close", command=self.close_window, fg="red")
         self.close_button.grid(row=0, column=3, padx=padx, pady=pady)
@@ -172,18 +173,23 @@ class App(tk.Tk):
     def close_window(self):
         self.destroy()
 
-    def on_combobox_select(self, event):
+    def on_session_selector_select(self, event):
         # Get the selected option
-        selected_day = self.selector.get()
+        selected_session = self.session_selector.get()
+        print("Selected Option:", selected_session)
+
+    def on_day_selector_select(self, event):
+        # Get the selected option
+        selected_day = self.day_selector.get()
         print("Selected Option:", selected_day)
 
         new_options = self.fileManager.get_sessions(selected_day)
 
-        self.sub_selector["values"] = new_options
+        self.session_selector["values"] = new_options
         if new_options:
-            self.sub_selector.current(0)
+            self.session_selector.current(0)
         else:
-            self.sub_selector.set("")  # Clear the selection if there are no values
+            self.session_selector.set("")  # Clear the selection if there are no values
 
     def statusMessage(self, status):  # display status message + image
         if status == "file":
@@ -209,10 +215,10 @@ class App(tk.Tk):
 
     def OnQRCodeDetected(self, value):
         self.name.config(text="QR Code Found")
-        result = self.fileManager.appendQRData(value, str(self.selected_entry.get()))
+        result = self.fileManager.appendQRData(value, str(self.selected_day.get()))
         self.cloudInfo.config(text=result)
         self.statusMessage("success")
-        time.sleep(3)
+        time.sleep(1)
 
     def tellNoQRC(self):
         self.name.config(text="No QR Code Found")
