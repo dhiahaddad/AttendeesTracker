@@ -6,7 +6,8 @@ from PIL import Image, ImageTk
 import time
 import datetime
 from threading import Thread
-from file_manager import FileManager, Session, Sessions
+from file_manager import FileManager, Sessions
+from google_file_manager import GoogleFileManager
 from camera_feed import CameraFeed
 from typing import List
 
@@ -23,6 +24,7 @@ class App(tk.Tk):
         self.input_file_path = "Sessions.xlsx"
         self.output_file_path = "Main file.xlsx"
         self.fileManager = FileManager(self.input_file_path, self.output_file_path)
+        self.googleFileManager = GoogleFileManager()
         self.sessions = Sessions
         self.auto_session_selection = True
 
@@ -190,7 +192,11 @@ class App(tk.Tk):
 
         self.auto_session_var = False
         self.auto_session_selection_button = tk.Button(
-            self, text="OFF", width=self.screen_width//200, height=self.screen_height//200, command=self.toggle_switch
+            self,
+            text="OFF",
+            width=self.screen_width // 200,
+            height=self.screen_height // 200,
+            command=self.toggle_switch,
         )
         self.auto_session_selection_button.grid(row=7, column=3, padx=padx, pady=pady)
 
@@ -261,13 +267,15 @@ class App(tk.Tk):
 
     def OnQRCodeDetected(self, value):
         self.name.config(text="QR Code Found")
-        if (self.auto_session_var):
+        if self.auto_session_var:
             self.fileManager.downloadRemoteFile(self.input_file_path)
             self.sessions = self.fileManager.get_Sessions(self.selected_day.get())
             session, current_session_index = self.sessions.get_current_session()
             self.session_selector.current(current_session_index)
-        result = self.fileManager.appendQRData(
-            value, str(self.selected_day.get()), str(self.selected_session.get())
+        result = self.googleFileManager.appendQRData(
+            value=value,
+            sheet_name=str(self.selected_day.get()),
+            session=str(self.selected_session.get()),
         )
         self.cloudInfo.config(text=result)
         self.statusMessage("success")
