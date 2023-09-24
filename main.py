@@ -201,7 +201,7 @@ class App(tk.Tk):
         self.auto_session_selection_button.grid(row=7, column=3, padx=padx, pady=pady)
 
         self.auto_session_label = ttk.Label(
-            self, text="Autotmatically select session -->", font=self.regularFont
+            self, text="Automatic session selection ==>", font=self.regularFont
         )  # current time
         self.auto_session_label.grid(row=7, column=2, padx=padx, pady=pady)
 
@@ -228,15 +228,25 @@ class App(tk.Tk):
         selected_day = self.day_selector.get()
         print("Selected Option:", selected_day)
 
-        self.sessions = self.fileManager.get_Sessions(selected_day)
-        session_names: List[str] = self.sessions.get_session_names()
-        session, current_session_index = self.sessions.get_current_session()
-
-        self.session_selector["values"] = session_names
-        if session_names:
-            self.session_selector.current(current_session_index)
+        if self.auto_session_var:
+            self.fileManager.downloadRemoteFile(self.input_file_path)
+            self.sessions = self.fileManager.get_Sessions(selected_day)
+            session_names: List[str] = self.sessions.get_session_names()
+            self.session_selector["values"] = session_names
+            session, current_session_index = self.sessions.get_current_session()
+            if session_names:
+                self.session_selector.current(current_session_index)
+            else:
+                self.session_selector.set("")  # Clear the selection if there are no values
         else:
-            self.session_selector.set("")  # Clear the selection if there are no values
+            self.sessions = self.fileManager.get_Sessions(selected_day)
+            session_names: List[str] = self.sessions.get_session_names()
+            self.session_selector["values"] = session_names
+            if session_names:
+                self.session_selector.current(0)
+            else:
+                self.session_selector.set("")  # Clear the selection if there are no values
+
 
     def statusMessage(self, status):  # display status message + image
         if status == "file":
@@ -275,6 +285,11 @@ class App(tk.Tk):
         result = self.googleFileManager.appendQRData(
             value=value,
             sheet_name=str(self.selected_day.get()),
+            session=str(self.selected_session.get()),
+        )
+        result = self.fileManager.appendQRData(
+            value=value,
+            sheetName=str(self.selected_day.get()),
             session=str(self.selected_session.get()),
         )
         self.cloudInfo.config(text=result)
